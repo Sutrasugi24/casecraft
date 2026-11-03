@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Ubah requirement menjadi test case QA yang siap diekspor ke Notion atau Jira." />
+    <meta name="theme-color" content="#f2f5f8" />
+    <title>Casecraft — QA Test Case Generator</title>
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Lewati ke area kerja</a>
+    <header class="app-header">
+      <a class="brand" href="#workspace" aria-label="Casecraft, kembali ke area kerja">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" role="img"><path d="M7 16.5 12.5 22 25 9.5"/><path d="M5 5h22v22H5z"/></svg>
+        </span>
+        <span>Casecraft</span>
+      </a>
+      <div class="header-meta">
+        <span class="privacy-dot" aria-hidden="true"></span>
+        Diproses di browser
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">QA workbench · Bahasa Indonesia</p>
+        <h1 id="page-title">Requirement masuk.<br />Coverage terlihat.</h1>
+        <p class="intro-copy">Buat draft test case yang terstruktur, lalu tinjau cakupannya sebelum dipindahkan ke Notion atau Jira.</p>
+      </section>
+
+      <section class="workbench" aria-label="Generator test case">
+        <form id="generator-form" class="panel input-panel" novalidate>
+          <div class="panel-heading">
+            <div>
+              <p class="step-label">Input</p>
+              <h2>Jelaskan fitur yang diuji</h2>
+            </div>
+            <button class="text-button" id="fill-example" type="button">Gunakan contoh</button>
+          </div>
+
+          <div class="field-group">
+            <label for="feature-name">Nama fitur</label>
+            <input id="feature-name" name="featureName" type="text" maxlength="80" placeholder="Contoh: Tabungan Driver" autocomplete="off" aria-describedby="feature-help" />
+            <p id="feature-help" class="field-help">Dipakai untuk judul modul dan ID test case.</p>
+          </div>
+
+          <div class="field-group requirement-field">
+            <div class="label-row">
+              <label for="requirement">Requirement <span aria-hidden="true">*</span></label>
+              <span id="character-count" class="character-count">0 karakter</span>
+            </div>
+            <textarea id="requirement" name="requirement" rows="13" minlength="30" placeholder="Tempel deskripsi fitur, acceptance criteria, aturan validasi, dan perilaku yang sudah ada..." aria-describedby="requirement-help requirement-error" required></textarea>
+            <p id="requirement-help" class="field-help">Tip: satu acceptance criteria per baris menghasilkan analisis yang lebih presisi.</p>
+            <p id="requirement-error" class="field-error" role="alert" hidden></p>
+          </div>
+
+          <fieldset class="coverage-fieldset">
+            <legend>Cakupan pengujian</legend>
+            <div class="coverage-options">
+              <label class="check-option"><input type="checkbox" name="coverage" value="happy" checked /><span><strong>Happy path</strong><small>Alur utama</small></span></label>
+              <label class="check-option"><input type="checkbox" name="coverage" value="negative" checked /><span><strong>Negative</strong><small>Input & kegagalan</small></span></label>
+              <label class="check-option"><input type="checkbox" name="coverage" value="edge" checked /><span><strong>Edge case</strong><small>Batas & kondisi khusus</small></span></label>
+              <label class="check-option"><input type="checkbox" name="coverage" value="regression" checked /><span><strong>Regression</strong><small>Fitur existing</small></span></label>
+            </div>
+            <p id="coverage-error" class="field-error" role="alert" hidden></p>
+          </fieldset>
+
+          <button id="generate-button" class="primary-button" type="submit">
+            <span class="button-label">Buat test case</span>
+            <span class="button-spinner" aria-hidden="true"></span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
+          </button>
+          <p class="form-note"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 4 5v4.5c0 3.7 2.5 6.4 6 8 3.5-1.6 6-4.3 6-8V5l-6-2.5Z"/><path d="m7.3 10 1.7 1.7 3.8-4"/></svg>Requirement tidak dikirim ke server pada versi ini.</p>
+        </form>
+
+        <section class="panel output-panel" aria-labelledby="output-title">
+          <div class="output-toolbar">
+            <div>
+              <p class="step-label">Output</p>
+              <h2 id="output-title">Test case hasil analisis</h2>
+            </div>
+            <div id="export-actions" class="export-actions" hidden>
+              <button id="copy-notion" class="secondary-button" type="button">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="10" height="10" rx="2"/><path d="M14 6V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+                Salin untuk Notion
+              </button>
+              <button id="download-jira" class="secondary-button" type="button">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v11m0 0 4-4m-4 4L6 9"/><path d="M3 15v3h14v-3"/></svg>
+                Unduh CSV Jira
+              </button>
+            </div>
+          </div>
+
+          <div id="empty-state" class="empty-state">
+            <div class="empty-sheet" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+              <svg viewBox="0 0 48 48"><path d="m13 25 7 7 15-17"/></svg>
+            </div>
+            <h3>Belum ada test case</h3>
+            <p>Masukkan requirement di sebelah kiri. Hasil akan tampil bersama peta cakupannya.</p>
+          </div>
+
+          <div id="results" class="results" hidden>
+            <aside class="coverage-rail" aria-label="Ringkasan cakupan test case">
+              <p class="rail-title">Coverage map</p>
+              <div id="coverage-summary" class="coverage-summary"></div>
+              <p id="coverage-note" class="coverage-note"></p>
+            </aside>
+
+            <div class="results-main">
+              <div class="results-meta">
+                <p><strong id="case-count">0</strong> test case dibuat</p>
+                <div class="filter-group" aria-label="Filter kategori">
+                  <button class="filter-chip is-active" type="button" data-filter="all" aria-pressed="true">Semua</button>
+                  <button class="filter-chip" type="button" data-filter="happy" aria-pressed="false">Happy</button>
+                  <button class="filter-chip" type="button" data-filter="negative" aria-pressed="false">Negative</button>
+                  <button class="filter-chip" type="button" data-filter="edge" aria-pressed="false">Edge</button>
+                  <button class="filter-chip" type="button" data-filter="regression" aria-pressed="false">Regression</button>
+                </div>
+              </div>
+
+              <div class="table-frame" tabindex="0" aria-label="Tabel test case, dapat digulir horizontal">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Test Case ID</th>
+                      <th scope="col">Module / Fitur</th>
+                      <th scope="col">Test Scenario</th>
+                      <th scope="col">Test Steps</th>
+                      <th scope="col">Expected Result</th>
+                      <th scope="col">Actual Result</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="test-case-body"></tbody>
+                </table>
+              </div>
+              <p class="review-note">Draft otomatis tetap perlu ditinjau oleh QA sebelum dieksekusi.</p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+    <script type="module" src="./app.js?v=2"></script>
+  </body>
+</html>
