@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Casecraft">
+  <rect width="512" height="512" rx="96" fill="#2457a7"/>
+  <rect x="112" y="104" width="288" height="304" rx="32" fill="#fff"/>
+  <path d="M164 258l58 58 130-142" fill="none" stroke="#18794e" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M168 154h110M168 366h176" stroke="#d9e0e7" stroke-width="22" stroke-linecap="round"/>
+</svg>
+

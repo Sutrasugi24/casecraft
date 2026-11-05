@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Kelola, tinjau coverage, dan catat hasil eksekusi test case QA." />
+    <meta name="theme-color" content="#f2f5f8" />
+    <title>Manajemen Test Case — Casecraft</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./casecraft-icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css?v=17" />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Lewati ke area kerja</a>
+    <header class="app-header">
+      <a class="brand" href="./index.html" aria-label="Casecraft, buka generator">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 16.5 12.5 22 25 9.5"/><path d="M5 5h22v22H5z"/></svg></span>
+        <span>Casecraft</span>
+      </a>
+      <nav class="page-nav" aria-label="Navigasi utama">
+        <a class="page-nav-link" href="./index.html"><span>1</span> Generator</a>
+        <a class="page-nav-link is-current" href="./management.html" aria-current="page"><span>2</span> Manajemen <b id="nav-case-count" hidden></b></a>
+      </nav>
+      <div class="header-tools"><label for="interface-language" class="header-language"><span>Bahasa antarmuka</span><select id="interface-language"><option value="id">ID</option><option value="en">EN</option></select></label><button id="install-app" class="text-button" type="button" hidden>Instal aplikasi</button><div id="connection-status" class="header-meta"><span class="privacy-dot" aria-hidden="true"></span>Lokal · siap offline</div></div>
+    </header>
+
+    <main id="workspace" class="workspace management-workspace">
+      <section class="management-heading" aria-labelledby="page-title">
+        <div><p class="eyebrow">Langkah 2 · Review & execution</p><h1 id="page-title">Review board untuk QA.</h1><p class="intro-copy">Pilih satu fitur, lalu tinjau coverage, status, dan hasil aktual tanpa mencampur test case dari fitur lain.</p></div>
+        <div class="heading-actions">
+          <div class="import-control"><button id="import-project" class="secondary-button" type="button" aria-describedby="import-help import-feedback">Impor proyek</button><small id="import-help">.casecraft.json · maks. 5 MB</small><small id="import-feedback" class="field-error" role="alert" hidden></small></div>
+          <input id="project-file" type="file" accept=".casecraft.json,application/json" aria-label="Pilih backup proyek Casecraft" hidden />
+          <div id="export-actions" class="export-actions" hidden>
+            <button id="export-project" class="secondary-button" type="button">Ekspor proyek</button>
+            <button id="compare-runs" class="secondary-button" type="button" aria-describedby="cycle-meta">Bandingkan run</button>
+            <button id="open-report" class="secondary-button" type="button">Laporan QA</button>
+            <button id="configure-export" class="secondary-button" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v11m0 0 4-4m-4 4L6 9"/><path d="M3 15v3h14v-3"/></svg>Atur ekspor</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="no-collection" class="panel management-empty" hidden>
+        <div class="empty-sheet" aria-hidden="true"><span></span><span></span><span></span><span></span><svg viewBox="0 0 48 48"><path d="m13 25 7 7 15-17"/></svg></div>
+        <div><p class="step-label">Koleksi kosong</p><h2>Belum ada test case untuk dikelola</h2><p>Buat koleksi dari requirement utama terlebih dahulu. Setelah itu, halaman ini menjadi pusat review dan eksekusi QA.</p><a class="primary-link" href="./index.html">Buka generator</a></div>
+      </section>
+
+      <div id="management-content" hidden>
+        <section class="execution-strip" aria-label="Ringkasan status eksekusi">
+          <div><span>Total</span><strong id="summary-total">0</strong></div>
+          <div data-status="passed"><span>Lulus</span><strong id="summary-passed">0</strong></div>
+          <div data-status="failed"><span>Gagal</span><strong id="summary-failed">0</strong></div>
+          <div data-status="blocked"><span>Terblokir</span><strong id="summary-blocked">0</strong></div>
+          <div data-status="untested"><span>Belum diuji</span><strong id="summary-untested">0</strong></div>
+        </section>
+
+        <section class="repository-layout">
+          <aside class="panel repository-sidebar" aria-labelledby="feature-panel-title">
+            <div class="panel-heading"><div><p class="step-label">Repository fitur</p><h2 id="feature-panel-title">Feature suites</h2></div><span id="feature-count" class="feature-count"></span></div>
+            <p class="panel-intro">Pilih satu fitur. Test case dari fitur lain tidak akan ikut tampil atau diekspor.</p>
+            <nav id="feature-list" class="feature-list" aria-label="Daftar fitur"></nav>
+            <a class="secondary-link feature-add-link" href="./index.html"><span aria-hidden="true">＋</span> Tambah fitur baru</a>
+            <details id="archive-disclosure" class="archive-disclosure" hidden><summary>Arsip suite <span id="archive-count">0</span></summary><div id="archive-list" class="archive-list"></div></details>
+
+            <section class="cycle-panel" aria-labelledby="cycle-panel-title">
+              <div class="cycle-heading"><div><p class="rail-title">Test cycle</p><h3 id="cycle-panel-title">Konteks eksekusi</h3></div><button id="create-cycle" class="text-button" type="button">Siklus baru</button></div>
+              <label for="cycle-select">Siklus aktif</label>
+              <select id="cycle-select"></select>
+              <p id="cycle-meta" class="cycle-meta"></p>
+            </section>
+
+            <section class="project-storage" aria-labelledby="storage-title">
+              <div><p class="rail-title">Pemulihan lokal</p><h3 id="storage-title">Simpan lintas sesi</h3></div>
+              <label class="storage-toggle"><input id="permanent-storage" type="checkbox" /><span><strong>Gunakan IndexedDB</strong><small>Opsional. Proyek tetap di perangkat dan tidak dikirim ke server.</small></span></label>
+              <p id="persistence-status" class="cycle-meta" role="status"></p>
+            </section>
+            <section class="collaboration-panel" aria-labelledby="collaboration-title"><div><p class="rail-title">Mode workspace</p><h3 id="collaboration-title">Lokal saja</h3></div><p>Kolaborasi remote belum dikonfigurasi. Provider mendatang wajib meminta persetujuan dan menampilkan kebijakan privasi sebelum jaringan diaktifkan.</p><strong id="collaboration-status">0 provider remote · jaringan nonaktif</strong></section>
+            <section class="automation-overview" aria-labelledby="automation-overview-title">
+              <div><p class="rail-title">Automation workspace</p><h3 id="automation-overview-title">Manual ↔ automation</h3></div>
+              <div id="automation-coverage-summary" class="automation-coverage-summary" role="status"></div>
+              <div class="automation-overview-actions"><button id="open-design-lab" class="text-button" type="button">Lab desain pengujian</button><button id="open-test-data" class="text-button" type="button">Test data studio</button><button id="open-flaky-analysis" class="text-button" type="button">Analisis flaky</button><button id="import-automation" class="text-button" type="button">Impor hasil</button><button id="analyze-diff" class="text-button" type="button">Analisis Git diff</button><button id="open-dependency-graph" class="text-button" type="button">Peta dependensi</button></div>
+              <input id="automation-report-file" type="file" accept=".xml,.json,application/xml,text/xml,application/json" aria-label="Pilih laporan automation lokal" hidden />
+              <input id="git-diff-file" type="file" accept=".diff,.patch,.txt,text/plain" aria-label="Pilih patch atau Git diff lokal" hidden />
+              <small>Semua file dibaca lokal. Casecraft tidak mengakses repository atau CI.</small>
+            </section>
+
+            <div class="coverage-compact" aria-label="Ringkasan kategori coverage">
+              <div class="coverage-compact-heading"><p class="rail-title">Coverage map</p><strong id="case-count">0</strong></div>
+              <div id="coverage-summary" class="coverage-summary"></div>
+              <p id="coverage-note" class="coverage-note"></p>
+            </div>
+
+            <section class="traceability-panel" aria-labelledby="traceability-title">
+              <div class="traceability-heading"><div><p class="rail-title">Requirement → test case</p><h3 id="traceability-title">Traceability map</h3></div><div class="traceability-actions"><strong id="traceability-summary">0/0</strong><button id="version-requirement" class="text-button" type="button">Versi baru</button></div></div>
+              <div id="generation-warnings" class="generation-warnings" role="status"></div>
+              <div id="traceability-list" class="traceability-list"></div>
+            </section>
+
+            <details id="coverage-disclosure" class="coverage-disclosure">
+              <summary>Tambah requirement terkait</summary>
+              <form id="add-form" class="add-panel" novalidate>
+                <p class="panel-intro">Hanya skenario baru untuk fitur aktif yang akan ditambahkan.</p>
+                <div class="active-feature-context"><span>Fitur aktif</span><strong id="active-feature-name"></strong><small id="active-feature-case-count"></small></div>
+                <div class="field-group requirement-field">
+                  <div class="label-row"><label for="requirement">Requirement tambahan <span aria-hidden="true">*</span></label><span id="character-count" class="character-count">0 karakter</span></div>
+                  <textarea id="requirement" name="requirement" rows="8" minlength="30" placeholder="Contoh: Sistem menyediakan ringkasan perubahan sebelum data disimpan..." aria-describedby="requirement-help requirement-error" required></textarea>
+                  <p id="requirement-help" class="field-help">Skenario serupa dilewati otomatis.</p><p id="requirement-error" class="field-error" role="alert" hidden></p>
+                </div>
+                <fieldset class="coverage-fieldset compact-coverage">
+                  <legend>Cakupan yang dianalisis</legend>
+                  <div class="coverage-options">
+                    <label class="check-option"><input type="checkbox" name="coverage" value="happy" checked /><span><strong>Happy</strong><small>Alur utama</small></span></label>
+                    <label class="check-option"><input type="checkbox" name="coverage" value="negative" checked /><span><strong>Negative</strong><small>Kegagalan</small></span></label>
+                    <label class="check-option"><input type="checkbox" name="coverage" value="edge" checked /><span><strong>Edge</strong><small>Kondisi batas</small></span></label>
+                    <label class="check-option"><input type="checkbox" name="coverage" value="regression" checked /><span><strong>Regression</strong><small>Fitur existing</small></span></label>
+                  </div><p id="coverage-error" class="field-error" role="alert" hidden></p>
+                </fieldset>
+                <p id="storage-error" class="form-alert" role="alert" tabindex="-1" hidden></p>
+                <button id="add-button" class="primary-button" type="submit"><span class="button-label">Tambahkan yang belum ada</span><span class="button-spinner" aria-hidden="true"></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button>
+              </form>
+            </details>
+          </aside>
+
+          <section class="panel case-repository" aria-labelledby="suite-title">
+            <div class="suite-toolbar">
+              <div><p class="step-label">Suite fitur aktif</p><h2 id="suite-title" tabindex="-1"><span id="suite-feature-name"></span></h2><p id="collection-update" class="collection-update" role="status"></p></div>
+              <div class="suite-actions"><button id="rename-suite" class="text-button" type="button">Ubah nama</button><button id="archive-suite" class="text-button danger-text" type="button">Arsipkan</button><button id="create-manual" class="secondary-button" type="button"><span aria-hidden="true">＋</span>Buat manual</button><a class="text-link" href="./index.html">Buat dari requirement</a></div>
+            </div>
+
+            <div class="repository-controls">
+              <div class="search-field">
+                <label for="case-search">Cari test case</label>
+                <div class="search-input-wrap"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg><input id="case-search" type="search" placeholder="ID atau skenario" autocomplete="off" /><button id="clear-search" type="button" aria-label="Hapus pencarian" hidden>×</button></div>
+              </div>
+              <div class="repository-filters">
+                <label for="category-filter"><span>Kategori</span><select id="category-filter"><option value="all">Semua kategori</option><option value="happy">Happy path</option><option value="negative">Negative</option><option value="edge">Edge case</option><option value="regression">Regression</option></select></label>
+                <label for="priority-filter"><span>Prioritas</span><select id="priority-filter"><option value="all">Semua prioritas</option><option value="Critical">Critical</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select></label>
+                <label for="status-filter"><span>Status QA</span><select id="status-filter"><option value="all">Semua status</option><option value="Belum diuji">Belum diuji</option><option value="Lulus">Lulus</option><option value="Gagal">Gagal</option><option value="Terblokir">Terblokir</option></select></label>
+                <label for="reject-filter"><span>Status reject</span><select id="reject-filter"><option value="all">Semua reject</option><option value="Tidak ditolak">Tidak ditolak</option><option value="Ditolak">Ditolak</option></select></label>
+                <label for="tag-filter"><span>Tag</span><select id="tag-filter"><option value="all">Semua tag</option></select></label>
+              </div>
+            </div>
+
+            <div class="repository-meta"><p id="visible-count" role="status">0 test case</p><button id="reset-filters" class="text-button" type="button" hidden>Reset filter</button></div>
+            <div id="bulk-bar" class="bulk-bar" hidden><strong id="bulk-count">0 dipilih</strong><label for="bulk-status">Ubah status QA<select id="bulk-status"><option value="Belum diuji">Belum diuji</option><option value="Lulus">Lulus</option><option value="Gagal">Gagal</option><option value="Terblokir">Terblokir</option></select></label><button id="apply-bulk" class="secondary-button" type="button">Terapkan</button><button id="clear-selection" class="text-button" type="button">Batalkan pilihan</button></div>
+            <div class="table-frame repository-table-frame" tabindex="0" aria-label="Daftar test case, dapat digulir horizontal dan vertikal">
+              <table><thead><tr><th scope="col" class="selection-cell"><label class="selection-control"><input id="select-visible" type="checkbox" /><span class="sr-only">Pilih semua test case yang terlihat</span></label></th><th scope="col" data-sort-column="id"><button class="sort-button" type="button" data-sort="id">ID <span aria-hidden="true">↕</span></button></th><th scope="col" data-sort-column="scenario"><button class="sort-button" type="button" data-sort="scenario">Skenario uji <span aria-hidden="true">↕</span></button></th><th scope="col" data-sort-column="categoryLabel"><button class="sort-button" type="button" data-sort="categoryLabel">Jenis <span aria-hidden="true">↕</span></button></th><th scope="col" data-sort-column="priority"><button class="sort-button" type="button" data-sort="priority">Prioritas <span aria-hidden="true">↕</span></button></th><th scope="col" data-sort-column="riskScore"><button class="sort-button" type="button" data-sort="riskScore">Risiko <span aria-hidden="true">↕</span></button></th><th scope="col" data-sort-column="qaStatus"><button class="sort-button" type="button" data-sort="qaStatus">Status QA <span aria-hidden="true">↕</span></button></th><th scope="col" data-sort-column="automationStatus"><button class="sort-button" type="button" data-sort="automationStatus">Automation <span aria-hidden="true">↕</span></button></th></tr></thead><tbody id="test-case-body"></tbody></table>
+            </div>
+            <p class="review-note">Pilih test case untuk melihat detail dan mencatat hasil eksekusi. Draft otomatis tetap perlu ditinjau oleh QA.</p>
+            <section class="issue-summary" aria-labelledby="issue-summary-title"><div><p class="rail-title">Perlu perhatian</p><h3 id="issue-summary-title">Kasus gagal & terblokir</h3></div><ul id="issue-summary-list"></ul></section>
+          </section>
+
+          <aside class="panel case-inspector" aria-label="Detail test case">
+            <div id="inspector-empty" class="inspector-empty"><span class="inspector-mark" aria-hidden="true">TC</span><h2>Pilih test case</h2><p>Detail precondition, langkah uji, expected result, dan hasil aktual akan tampil di sini.</p></div>
+            <div id="inspector-content" hidden>
+              <div class="inspector-heading">
+                <div class="inspector-meta"><span id="selected-case-id" class="case-id"></span><span id="selected-case-category" class="category-badge"></span></div>
+                <h2 id="selected-case-title" tabindex="-1"></h2>
+                <p id="selected-case-criteria" class="selected-case-criteria"></p>
+                <div id="selected-case-impact" class="impact-note" hidden></div>
+                <div id="inspector-actions" class="inspector-actions" aria-label="Aksi test case">
+                  <button id="edit-case" class="secondary-button" type="button">Edit</button>
+                  <button id="duplicate-case" class="secondary-button" type="button">Duplikasi</button>
+                  <button id="delete-case" class="danger-button" type="button">Hapus</button>
+                </div>
+              </div>
+              <div id="execution-fields" class="inspector-fields">
+                <label for="case-priority"><span>Prioritas</span><select id="case-priority"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></label>
+                <label for="case-qa-status"><span>Status QA</span><select id="case-qa-status"><option>Belum diuji</option><option>Lulus</option><option>Gagal</option><option>Terblokir</option></select></label>
+                <label for="case-reject-status"><span>Status reject</span><select id="case-reject-status"><option>Tidak ditolak</option><option>Ditolak</option></select></label>
+              </div>
+              <div id="case-spec-view" class="case-spec"><section><h3>Precondition</h3><p id="case-precondition"></p></section><section><h3>Langkah uji</h3><ol id="case-steps" class="steps-list"></ol></section><section><h3>Data uji</h3><p id="case-test-data"></p></section><section id="parameter-section"><div class="parameter-heading"><h3>Kombinasi parameter</h3><span id="parameter-count"></span></div><div class="parameter-table-frame"><table><thead><tr><th>Label</th><th>Data</th><th>Expected</th></tr></thead><tbody id="parameter-body"></tbody></table></div></section><section class="risk-card"><div><h3>Risk-based priority</h3><strong id="risk-score">0</strong></div><p id="risk-detail"></p><small>Skor membantu urutan eksekusi; bukan klaim coverage lengkap.</small></section><section class="expected-block"><h3>Expected result</h3><p id="case-expected"></p></section></div>
+
+              <section id="automation-card" class="automation-card" aria-labelledby="automation-card-title">
+                <div class="automation-card-heading"><div><p class="rail-title">Automation readiness</p><h3 id="automation-card-title">Kesiapan automation</h3></div><strong id="automation-readiness-score">0%</strong></div>
+                <p id="automation-readiness-label"></p><ul id="automation-readiness-list" class="automation-readiness-list"></ul>
+                <div class="automation-fields"><label for="automation-lifecycle"><span>Coverage status</span><select id="automation-lifecycle"><option value="manual">Manual</option><option value="candidate">Kandidat automation</option><option value="automated">Automated</option><option value="flaky">Flaky</option><option value="not-suitable">Tidak layak diotomasi</option></select></label><label for="automation-review"><span>Review skeleton</span><select id="automation-review"><option value="draft">Belum disetujui</option><option value="approved">Disetujui QA</option></select></label><label for="automation-selector"><span>Selector / target request</span><input id="automation-selector" type="text" maxlength="500" placeholder="Contoh: [data-testid='save'] atau POST /v1/orders" /></label><label for="automation-cleanup"><span>Cleanup</span><input id="automation-cleanup" type="text" maxlength="500" placeholder="Contoh: hapus order uji dengan ID yang dibuat" /></label></div>
+                <button id="open-skeleton" class="secondary-button" type="button">Buat skeleton automation</button>
+                <details class="pairwise-disclosure"><summary>Generate kombinasi pairwise</summary><label for="pairwise-factors"><span>Faktor dan nilai</span><textarea id="pairwise-factors" rows="5" placeholder="browser=Chrome|Firefox&#10;role=admin|member&#10;locale=id|en"></textarea><small>Satu faktor per baris: nama=nilai1|nilai2. Maksimal 8 faktor.</small></label><button id="generate-pairwise" class="secondary-button" type="button">Buat kombinasi pairwise</button><p id="pairwise-feedback" role="status"></p></details>
+              </section>
+
+              <form id="case-editor" class="case-editor" novalidate hidden>
+                <p id="editor-intro" class="editor-intro"></p>
+                <label for="editor-category"><span>Kategori coverage</span><select id="editor-category"><option value="happy">Happy path</option><option value="negative">Negative</option><option value="edge">Edge case</option><option value="regression">Regression</option></select></label>
+                <fieldset class="editor-criteria"><legend>Acceptance criterion terkait</legend><div id="editor-criteria-options"></div><small class="field-help">Pilih semua criterion yang benar-benar diuji oleh skenario ini.</small></fieldset>
+                <label for="editor-tags"><span>Tag</span><input id="editor-tags" type="text" maxlength="240" placeholder="smoke, pembayaran, mobile" aria-describedby="editor-tags-help" /><small id="editor-tags-help" class="field-help">Pisahkan tag dengan koma. Tag membantu filter dan ekspor.</small></label>
+                <fieldset class="risk-editor"><legend>Penilaian risiko (1–5)</legend><div><label for="risk-impact">Dampak<select id="risk-impact"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label><label for="risk-probability">Probabilitas<select id="risk-probability"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label><label for="risk-complexity">Kompleksitas<select id="risk-complexity"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label><label for="risk-regression">Regression<select id="risk-regression"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label></div><small class="field-help">Nilai dapat disesuaikan QA berdasarkan konteks bisnis.</small></fieldset>
+                <label for="editor-scenario"><span>Skenario uji</span><textarea id="editor-scenario" rows="3" aria-describedby="editor-scenario-error" required></textarea><small id="editor-scenario-error" class="field-error" role="alert" hidden></small></label>
+                <label for="editor-precondition"><span>Precondition</span><textarea id="editor-precondition" rows="4" aria-describedby="editor-precondition-error" required></textarea><small id="editor-precondition-error" class="field-error" role="alert" hidden></small></label>
+                <label for="editor-steps"><span>Langkah uji</span><textarea id="editor-steps" rows="7" aria-describedby="editor-steps-help editor-steps-error" required></textarea><small id="editor-steps-help" class="field-help">Tulis satu langkah per baris. Nomor akan ditambahkan saat ditampilkan dan diekspor.</small><small id="editor-steps-error" class="field-error" role="alert" hidden></small></label>
+                <label for="editor-test-data"><span>Data uji</span><textarea id="editor-test-data" rows="4" aria-describedby="editor-test-data-error" required></textarea><small id="editor-test-data-error" class="field-error" role="alert" hidden></small></label>
+                <label for="editor-parameters"><span>Kombinasi parameter</span><textarea id="editor-parameters" rows="5" aria-describedby="editor-parameters-help" placeholder="Minimum | nilai=10 | Diterima&#10;Di luar minimum | nilai=9 | Ditolak"></textarea><small id="editor-parameters-help" class="field-help">Satu kombinasi per baris: Label | Data | Expected.</small></label>
+                <label for="editor-expected"><span>Expected result</span><textarea id="editor-expected" rows="5" aria-describedby="editor-expected-error" required></textarea><small id="editor-expected-error" class="field-error" role="alert" hidden></small></label>
+                <p id="editor-form-error" class="form-alert" role="alert" tabindex="-1" hidden></p>
+                <div class="editor-actions"><button id="cancel-editor" class="secondary-button" type="button">Batal</button><button id="save-editor" class="primary-button" type="submit"><span class="button-label">Simpan perubahan</span></button></div>
+              </form>
+
+              <div id="actual-field" class="actual-field"><label for="case-actual">Hasil aktual</label><textarea id="case-actual" rows="5" placeholder="Catat hasil eksekusi, bukti, atau blocker..."></textarea></div>
+              <div class="execution-reference-grid"><label for="case-defect-reference"><span>Referensi defect</span><input id="case-defect-reference" type="text" maxlength="200" placeholder="Contoh: BUG-142" /></label><label for="case-blocker"><span>Blocker</span><input id="case-blocker" type="text" maxlength="300" placeholder="Alasan kasus belum dapat dijalankan" /></label></div>
+              <p id="save-status" class="save-status" role="status">Perubahan tersimpan otomatis selama sesi tab.</p>
+              <section class="execution-history" aria-labelledby="history-title"><div class="history-heading"><h3 id="history-title">Riwayat eksekusi</h3><span id="history-count"></span></div><ol id="history-list"></ol></section>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
+
+    <dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+      <div class="dialog-mark" aria-hidden="true">!</div>
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-description"></p>
+      <div class="dialog-actions"><button id="confirm-cancel" class="secondary-button" type="button">Batal</button><button id="confirm-action" class="danger-button danger-button-solid" type="button">Hapus</button></div>
+    </dialog>
+
+    <dialog id="cycle-dialog" class="confirm-dialog cycle-dialog" aria-labelledby="cycle-title">
+      <form id="cycle-form" novalidate>
+        <p class="step-label">Test cycle baru</p>
+        <h2 id="cycle-title">Pisahkan hasil eksekusi</h2>
+        <p>Catat konteks run agar retest dan regression tidak menimpa hasil sebelumnya.</p>
+        <label for="cycle-name"><span>Nama siklus <b aria-hidden="true">*</b></span><input id="cycle-name" type="text" maxlength="80" aria-describedby="cycle-name-error" required /><small id="cycle-name-error" class="field-error" role="alert" hidden></small></label>
+        <div class="cycle-form-grid">
+          <label for="cycle-build"><span>Versi build</span><input id="cycle-build" type="text" maxlength="60" placeholder="Contoh: 2.4.0-rc1" /></label>
+          <label for="cycle-environment"><span>Environment</span><input id="cycle-environment" type="text" maxlength="60" placeholder="Staging" /></label>
+          <label for="cycle-browser"><span>Browser</span><input id="cycle-browser" type="text" maxlength="60" placeholder="Chrome 132" /></label>
+          <label for="cycle-device"><span>Perangkat</span><input id="cycle-device" type="text" maxlength="60" placeholder="Desktop Windows" /></label>
+        </div>
+        <div class="dialog-actions"><button id="cycle-cancel" class="secondary-button" type="button">Batal</button><button class="primary-button" type="submit"><span class="button-label">Buat siklus</span></button></div>
+      </form>
+    </dialog>
+
+    <dialog id="rename-dialog" class="confirm-dialog" aria-labelledby="rename-title">
+      <form id="rename-form" novalidate><p class="step-label">Nama suite</p><h2 id="rename-title">Ubah nama suite</h2><p>ID internal, test case, dan riwayat eksekusi tetap dipertahankan.</p><label for="rename-input"><span>Nama baru</span><input id="rename-input" type="text" maxlength="100" aria-describedby="rename-error" required /><small id="rename-error" class="field-error" role="alert" hidden></small></label><div class="dialog-actions"><button id="rename-cancel" class="secondary-button" type="button">Batal</button><button class="primary-button" type="submit">Simpan nama</button></div></form>
+    </dialog>
+
+    <dialog id="version-dialog" class="export-dialog version-dialog" aria-labelledby="version-title">
+      <form id="version-form" novalidate><div class="export-dialog-heading"><div><p class="step-label">Requirement versioning</p><h2 id="version-title">Bandingkan versi requirement</h2><p>Analisis lokal mempertahankan criterion yang sama dan menandai dampak pada test case.</p></div><button id="version-close" class="icon-button" type="button" aria-label="Tutup versioning requirement">×</button></div><label for="version-requirement-select"><span>Requirement</span><select id="version-requirement-select"></select></label><label for="version-text"><span>Requirement versi baru</span><textarea id="version-text" rows="12" aria-describedby="version-error" required></textarea><small id="version-error" class="field-error" role="alert" hidden></small></label><div id="version-preview" class="version-preview" hidden></div><div class="dialog-actions"><button id="analyze-version" class="secondary-button" type="submit">Analisis dampak</button><button id="apply-version" class="primary-button" type="button" disabled>Terapkan versi baru</button></div></form>
+    </dialog>
+
+    <dialog id="compare-dialog" class="export-dialog report-dialog" aria-labelledby="compare-title"><form id="compare-form" novalidate><div class="export-dialog-heading"><div><p class="step-label">Build / release</p><h2 id="compare-title">Perbandingan test run</h2><p>Pilih baseline dan target untuk melihat perubahan hasil eksekusi.</p></div><button id="compare-close" class="icon-button" type="button" aria-label="Tutup perbandingan run">×</button></div><div class="comparison-selects"><label for="compare-baseline"><span>Baseline</span><select id="compare-baseline"></select></label><label for="compare-target"><span>Target</span><select id="compare-target"></select></label></div><div id="comparison-result" class="comparison-result" role="status"></div></form></dialog>
+
+    <dialog id="report-dialog" class="export-dialog report-dialog" aria-labelledby="report-title"><form id="report-form" novalidate><div class="export-dialog-heading"><div><p class="step-label">Dokumen lokal</p><h2 id="report-title">Laporan QA</h2><p>HTML dapat diunduh langsung. Gunakan dialog print browser untuk menyimpan PDF.</p></div><button id="report-close" class="icon-button" type="button" aria-label="Tutup laporan QA">×</button></div><div class="report-config"><label for="report-cycle"><span>Test cycle</span><select id="report-cycle"></select></label><label for="report-baseline"><span>Baseline pembanding</span><select id="report-baseline"><option value="">Tanpa perbandingan</option></select></label><label for="report-language"><span>Bahasa output</span><select id="report-language"><option value="id">Bahasa Indonesia</option><option value="en">English</option></select></label></div><div id="report-preview" class="report-preview"></div><div class="dialog-actions"><button id="download-report" class="secondary-button" type="button">Unduh HTML</button><button id="print-report" class="primary-button" type="button">Cetak / simpan PDF</button></div></form></dialog>
+
+    <dialog id="skeleton-dialog" class="export-dialog report-dialog" aria-labelledby="skeleton-title"><form id="skeleton-form" novalidate><div class="export-dialog-heading"><div><p class="step-label">Draft engineer</p><h2 id="skeleton-title">Automation skeleton</h2><p>Skeleton hanya dibuat dari test case yang sudah disetujui QA dan tetap memerlukan code review.</p></div><button id="skeleton-close" class="icon-button" type="button" aria-label="Tutup automation skeleton">×</button></div><label for="skeleton-framework"><span>Framework</span><select id="skeleton-framework"><option value="playwright">Playwright</option><option value="cypress">Cypress</option><option value="webdriverio">WebdriverIO</option><option value="postman">Postman</option></select></label><p id="skeleton-warning" class="form-alert" role="status" hidden></p><label for="skeleton-preview"><span>Preview draft</span><textarea id="skeleton-preview" rows="18" readonly></textarea></label><div class="dialog-actions"><button id="copy-skeleton" class="secondary-button" type="button">Salin skeleton</button><button id="download-skeleton" class="primary-button" type="button">Unduh draft</button></div></form></dialog>
+
+    <dialog id="automation-report-dialog" class="export-dialog report-dialog" aria-labelledby="automation-report-title"><form id="automation-report-form" novalidate><div class="export-dialog-heading"><div><p class="step-label">Import lokal</p><h2 id="automation-report-title">Hasil automation</h2><p>JUnit XML dan Playwright JSON dicocokkan melalui Casecraft ID pada judul test.</p></div><button id="automation-report-close" class="icon-button" type="button" aria-label="Tutup impor hasil automation">×</button></div><label for="automation-report-cycle"><span>Test cycle tujuan</span><select id="automation-report-cycle"></select></label><div id="automation-report-preview" class="import-result" role="status"></div><div class="dialog-actions"><button id="apply-automation-report" class="primary-button" type="submit">Terapkan ke test run</button></div></form></dialog>
+
+    <dialog id="test-data-dialog" class="export-dialog test-data-dialog" aria-labelledby="test-data-title">
+      <form id="test-data-form" novalidate>
+        <div class="export-dialog-heading"><div><p class="step-label">Fixture lokal</p><h2 id="test-data-title">Test Data Studio</h2><p>Buat data sintetis atau masking JSON sebelum menjadi fixture. Jangan tempel data produksi asli.</p></div><button id="test-data-close" class="icon-button" type="button" aria-label="Tutup Test Data Studio">×</button></div>
+        <label for="test-data-mode"><span>Mode</span><select id="test-data-mode"><option value="synthetic">Buat dataset sintetis</option><option value="mask">Masking JSON sensitif</option></select></label>
+        <section id="synthetic-data-fields" class="test-data-fields" aria-label="Konfigurasi dataset sintetis">
+          <label for="test-data-definitions"><span>Definisi field</span><textarea id="test-data-definitions" rows="8" aria-describedby="test-data-definition-help">name:name&#10;email:email&#10;amount:integer,min=1,max=100&#10;active:boolean</textarea><small id="test-data-definition-help">Satu field per baris: nama:type,opsi=value. Tipe: name, email, phone, username, uuid, date, integer, number, string, boolean.</small></label>
+          <div class="test-data-grid"><label for="test-data-count"><span>Jumlah record</span><input id="test-data-count" type="number" min="1" max="1000" value="10" /></label><label for="test-data-seed"><span>Seed deterministik</span><input id="test-data-seed" type="text" maxlength="100" value="casecraft" /></label></div>
+          <label class="quality-override"><input id="test-data-boundaries" type="checkbox" checked /><span>Tambahkan variasi boundary eksplisit</span></label>
+        </section>
+        <section id="mask-data-fields" class="test-data-fields" aria-label="Konfigurasi masking JSON" hidden>
+          <label for="test-data-source"><span>JSON yang akan dimasking</span><textarea id="test-data-source" rows="9" placeholder='[{"email":"qa@example.test","token":"secret"}]'></textarea><small>Field sensitif umum dikenali otomatis. Data hanya diproses di memori browser.</small></label>
+          <label for="test-data-mask-fields"><span>Field sensitif tambahan</span><input id="test-data-mask-fields" type="text" maxlength="300" placeholder="customerId, internalReference" /><small>Pisahkan dengan koma.</small></label>
+        </section>
+        <p id="test-data-error" class="form-alert" role="alert" tabindex="-1" hidden></p>
+        <label for="test-data-preview"><span>Preview fixture</span><textarea id="test-data-preview" rows="14" readonly></textarea></label>
+        <div class="dialog-actions"><button id="generate-test-data" class="secondary-button" type="submit">Proses data</button><button id="download-fixture-csv" class="secondary-button" type="button" disabled>Unduh CSV</button><button id="download-fixture-json" class="primary-button" type="button" disabled>Unduh JSON</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="design-lab-dialog" class="export-dialog design-lab-dialog" aria-labelledby="design-lab-title">
+      <form id="design-lab-form" novalidate>
+        <div class="export-dialog-heading"><div><p class="step-label">Evidence-based planning</p><h2 id="design-lab-title">Lab desain pengujian</h2><p>Bangun rancangan deterministik dari kontrak yang Anda isi. Detail yang belum tersedia akan ditandai sebagai peringatan.</p></div><button id="design-lab-close" class="icon-button" type="button" aria-label="Tutup Lab desain pengujian">×</button></div>
+        <label for="design-lab-mode"><span>Jenis rancangan</span><select id="design-lab-mode"><option value="model">Model-based testing</option><option value="fuzz">Property-based &amp; fuzz testing</option><option value="visual">Visual regression planning</option><option value="accessibility">Accessibility test workbench</option><option value="performance">Performance-test designer</option><option value="security">Security test catalogue</option><option value="mobile">Mobile device matrix</option><option value="migration">Data migration testing</option><option value="localization">Localization testing</option></select></label>
+
+        <section class="design-lab-panel" data-design-panel="model" aria-label="Konfigurasi model-based testing">
+          <label for="model-source"><span>State machine / diagram alur</span><textarea id="model-source" rows="11" aria-describedby="model-help">name: Pembayaran invoice&#10;initial: Draft&#10;Draft -- bayar --> Processing&#10;Processing -- berhasil --> Paid&#10;Processing -- timeout --> Failed&#10;invalid: Paid | bayar | State tetap Paid dan event ditolak&#10;recovery: Failed | coba lagi | Processing</textarea><small id="model-help">Gunakan State -- event --&gt; State. Invalid dan recovery hanya dibuat bila hasil akhirnya ditulis eksplisit.</small></label>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="fuzz" aria-label="Konfigurasi property-based dan fuzz testing" hidden>
+          <label for="fuzz-rules"><span>Aturan input</span><textarea id="fuzz-rules" rows="7" aria-describedby="fuzz-help">amount:integer,min=1,max=100&#10;email:email&#10;code:string,minLength=3,maxLength=8&#10;role:enum,values=admin|member</textarea><small id="fuzz-help">Tipe: integer, number, string, boolean, email, enum. Batas angka dan panjang harus eksplisit.</small></label>
+          <label for="fuzz-properties"><span>Invariant / property</span><textarea id="fuzz-properties" rows="4" placeholder="Total tidak pernah negatif&#10;Role di luar enum selalu ditolak"></textarea></label>
+          <div class="test-data-grid"><label for="fuzz-runs"><span>Jumlah variasi</span><input id="fuzz-runs" type="number" min="1" max="1000" value="100" /></label><label for="fuzz-seed"><span>Seed deterministik</span><input id="fuzz-seed" type="text" maxlength="100" value="casecraft" /></label></div>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="visual" aria-label="Konfigurasi visual regression" hidden>
+          <label for="visual-name"><span>Nama rencana</span><input id="visual-name" type="text" maxlength="120" value="Checkout visual" /></label>
+          <div class="design-lab-grid"><label for="visual-pages"><span>Halaman</span><textarea id="visual-pages" rows="5">Checkout | /checkout&#10;Konfirmasi | /checkout/success</textarea><small>Satu baris: label | /path.</small></label><label for="visual-viewports"><span>Viewport</span><textarea id="visual-viewports" rows="5">desktop=1440x900&#10;mobile=390x844</textarea><small>Satu baris: nama=lebarxtinggi.</small></label></div>
+          <div class="test-data-grid"><label for="visual-themes"><span>Tema</span><input id="visual-themes" type="text" value="light,dark" /></label><label for="visual-locales"><span>Locale</span><input id="visual-locales" type="text" value="id-ID,en-US" /></label></div>
+          <label for="visual-regions"><span>Area yang boleh berubah</span><textarea id="visual-regions" rows="4" placeholder="[data-clock] | waktu sistem dinamis"></textarea><small>Selector | alasan. Kosong berarti setiap perbedaan harus ditinjau.</small></label>
+          <label for="visual-baselines"><span>Baseline screenshot</span><input id="visual-baselines" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" multiple aria-describedby="visual-file-help visual-file-status" /><small id="visual-file-help">PNG, JPEG, atau WebP · maks. 20 file · 5 MB per file. Hanya metadata dan hash lokal yang masuk ke rencana.</small></label><p id="visual-file-status" class="file-status" role="status">Belum ada baseline dipilih.</p>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="accessibility" aria-label="Konfigurasi accessibility test workbench" hidden>
+          <label for="accessibility-scope"><span>Scope halaman / alur</span><input id="accessibility-scope" type="text" maxlength="160" value="Alur checkout" /></label>
+          <fieldset><legend>Pola komponen dalam scope</legend><div class="design-check-grid"><label><input type="checkbox" name="a11y-pattern" value="form" checked /> Form &amp; error</label><label><input type="checkbox" name="a11y-pattern" value="dialog" checked /> Dialog</label><label><input type="checkbox" name="a11y-pattern" value="table" /> Data table</label><label><input type="checkbox" name="a11y-pattern" value="upload" /> File selection</label><label><input type="checkbox" name="a11y-pattern" value="animation" /> Animasi</label></div></fieldset>
+          <p class="review-note">Target checklist: WCAG 2.2 AA, keyboard, screen reader, focus order, zoom/reflow, dan reduced motion. Hasil bukan klaim konformitas otomatis.</p>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="performance" aria-label="Konfigurasi performance-test designer" hidden>
+          <div class="design-lab-grid"><label for="performance-name"><span>Nama workload</span><input id="performance-name" type="text" value="Checkout load" /></label><label for="performance-format"><span>Format draft</span><select id="performance-format"><option value="k6">k6</option><option value="jmeter">JMeter</option></select></label><label for="performance-method"><span>Metode HTTP</span><select id="performance-method"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select></label><label for="performance-path"><span>Path target</span><input id="performance-path" type="text" value="/checkout" /></label><label for="performance-workload"><span>Profil workload</span><select id="performance-workload"><option value="load">Load</option><option value="stress">Stress</option><option value="spike">Spike</option><option value="soak">Soak</option></select></label><label for="performance-concurrency"><span>Concurrency / VU</span><input id="performance-concurrency" type="number" min="1" value="20" /></label><label for="performance-duration"><span>Durasi total (detik)</span><input id="performance-duration" type="number" min="10" value="120" /></label><label for="performance-ramp"><span>Ramp-up (detik)</span><input id="performance-ramp" type="number" min="1" value="30" /></label><label for="performance-volume"><span>Volume data</span><input id="performance-volume" type="number" min="1" value="1000" /></label><label for="performance-p95"><span>p95 maksimum (ms)</span><input id="performance-p95" type="number" min="1" value="500" /></label><label for="performance-error"><span>Error rate maksimum (%)</span><input id="performance-error" type="number" min="0" max="100" step="0.1" value="1" /></label><label for="performance-throughput"><span>Throughput minimum (req/s)</span><input id="performance-throughput" type="number" min="0" step="0.1" value="10" /></label></div>
+          <label for="performance-body"><span>Request body JSON (opsional)</span><textarea id="performance-body" rows="4" placeholder='{"productId":"fixture-id"}'></textarea></label><label for="performance-data"><span>Strategi data dan cleanup</span><textarea id="performance-data" rows="3" placeholder="Siapkan 1.000 cart sintetis; hapus order uji setelah run."></textarea></label>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="security" aria-label="Konfigurasi security test catalogue" hidden>
+          <label for="security-scope"><span>Scope keamanan</span><input id="security-scope" type="text" maxlength="160" value="Checkout API dan aplikasi web" /></label>
+          <p class="review-note">Gunakan hanya pada environment dan scope yang telah diberi izin. Casecraft menyusun review aid; tidak menjalankan payload atau membuktikan keamanan.</p>
+          <div class="design-lab-grid">
+            <label for="security-authorization"><span>Authorization</span><textarea id="security-authorization" rows="5">member | baca invoice milik sendiri | allow&#10;member | baca invoice pengguna lain | deny&#10;support | refund invoice | deny</textarea><small>role | aksi/resource | allow atau deny.</small></label>
+            <label for="security-session"><span>Session</span><textarea id="security-session" rows="5">idle selama 15 menit | idle-timeout=15m | Session berakhir dan akses berikutnya meminta autentikasi ulang&#10;login ulang | rotate-session-id | Session ID lama tidak dapat dipakai kembali</textarea><small>event | policy | expected.</small></label>
+            <label for="security-injection"><span>Input injection</span><textarea id="security-injection" rows="5">couponCode | query parameter | Input diperlakukan sebagai data dan tidak mengubah struktur query&#10;customerName | HTML output | Nilai di-encode dan tidak membuat elemen executable</textarea><small>entry point | konteks | expected.</small></label>
+            <label for="security-exposure"><span>Data exposure</span><textarea id="security-exposure" rows="5">GET /invoice/:id | paymentToken | payment-service&#10;browser storage | customerEmail | anggota pemilik akun</textarea><small>surface | data sensitif | audience yang diizinkan.</small></label>
+            <label for="security-rate"><span>Rate limit</span><textarea id="security-rate" rows="5">request OTP | 5 request | 10 menit | Request keenam ditolak tanpa mengirim OTP tambahan&#10;checkout | 20 request | 1 menit | Request berlebih dibatasi tanpa membuat order ganda</textarea><small>operasi | batas | window | expected.</small></label>
+            <label for="security-abuse"><span>Abuse case</span><textarea id="security-abuse" rows="5">redeem coupon | penggunaan berulang lintas akun | one-use coupon per customer | Credit hanya diterapkan satu kali dan percobaan abuse tercatat&#10;reserve stock | menahan seluruh stok | reservation quota | Kuota membatasi reservasi tanpa memblokir pembeli sah</textarea><small>flow | abuse | guard | expected.</small></label>
+          </div>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="mobile" aria-label="Konfigurasi mobile device matrix" hidden>
+          <label for="mobile-devices"><span>Perangkat</span><textarea id="mobile-devices" rows="7">iPhone 15 | iOS 18 | Safari | 393x852&#10;Pixel 8 | Android 15 | Chrome | 412x915&#10;Galaxy A15 | Android 14 | Samsung Internet | 360x800</textarea><small>nama | sistem operasi | browser | lebarxtinggi.</small></label>
+          <div class="design-lab-grid"><label for="mobile-orientations"><span>Orientasi</span><input id="mobile-orientations" type="text" value="portrait,landscape" /></label><label for="mobile-networks"><span>Kondisi jaringan</span><input id="mobile-networks" type="text" value="Wi-Fi,4G,Slow 3G,offline" /></label></div>
+          <label for="mobile-keyboards"><span>Virtual keyboard</span><input id="mobile-keyboards" type="text" value="hidden,open" /><small>Pisahkan kondisi dengan koma. Matriks dibatasi maksimal 1.000 kombinasi.</small></label>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="migration" aria-label="Konfigurasi data migration testing" hidden>
+          <label for="migration-name"><span>Nama migrasi</span><input id="migration-name" type="text" maxlength="160" value="Order schema v3" /></label>
+          <div class="design-lab-grid"><label for="migration-sources"><span>Versi sumber</span><input id="migration-sources" type="text" value="v1.8,v2.0" /></label><label for="migration-target"><span>Versi target</span><input id="migration-target" type="text" value="v3.0" /></label></div>
+          <label for="migration-entities"><span>Entitas dan integritas</span><textarea id="migration-entities" rows="5">orders | orderId | 10000 | status,total,customerId&#10;payments | paymentId | 10000 | amount,currency,orderId</textarea><small>entitas | primary key | volume record | field yang diperiksa.</small></label>
+          <div class="design-lab-grid"><label for="migration-compatibility"><span>Backward compatibility</span><textarea id="migration-compatibility" rows="4">mobile-v2 | Client dapat membaca order v3 tanpa field wajib yang hilang&#10;report-v1 | Report lama menghasilkan total yang sama</textarea><small>client/schema lama | expected.</small></label><label for="migration-rollbacks"><span>Rollback</span><textarea id="migration-rollbacks" rows="4">batch 5 gagal | Schema dan data kembali ke v2 tanpa transaksi parsial&#10;validasi checksum gagal | Target dibatalkan dan sumber tetap dapat dibaca</textarea><small>trigger | expected.</small></label></div>
+          <label for="migration-reconciliation"><span>Rekonsiliasi</span><textarea id="migration-reconciliation" rows="4">order_count | Jumlah order sumber sama dengan target | 0&#10;payment_total | Total nominal sumber sama dengan target | 0.01 IDR</textarea><small>metric | expected | toleransi.</small></label>
+        </section>
+
+        <section class="design-lab-panel" data-design-panel="localization" aria-label="Konfigurasi localization testing" hidden>
+          <label for="localization-name"><span>Scope localization</span><input id="localization-name" type="text" maxlength="160" value="Checkout regional" /></label>
+          <label for="localization-locales"><span>Locale, timezone, dan currency</span><textarea id="localization-locales" rows="5">id-ID | Asia/Jakarta | IDR&#10;en-US | America/New_York | USD&#10;ar-SA | Asia/Riyadh | SAR</textarea><small>locale | IANA timezone | ISO currency.</small></label>
+          <div class="design-lab-grid"><label for="localization-instant"><span>Timestamp contoh</span><input id="localization-instant" type="text" value="2026-11-05T08:30:00Z" /></label><label for="localization-number"><span>Angka contoh</span><input id="localization-number" type="number" step="0.01" value="1234567.89" /></label><label for="localization-plurals"><span>Nilai pluralisasi</span><input id="localization-plurals" type="text" value="0,1,2,5" /></label><label for="localization-fallback"><span>Fallback locale</span><input id="localization-fallback" type="text" value="id-ID" /></label></div>
+          <label for="localization-surfaces"><span>Surface dan teks panjang</span><textarea id="localization-surfaces" rows="5">pay-button | Bayar sekarang | 24&#10;payment-status | Pembayaran sedang diverifikasi | 48</textarea><small>surface | teks sumber | batas karakter acuan.</small></label>
+          <div class="design-lab-grid"><label for="localization-expansion"><span>Ekspansi teks (%)</span><input id="localization-expansion" type="number" min="100" max="300" value="150" /></label><label for="localization-mixed"><span>Teks campuran</span><input id="localization-mixed" type="text" value="Invoice INV-123 — العربية 日本語 Rp1.000" /></label></div>
+        </section>
+
+        <p id="design-lab-error" class="form-alert" role="alert" tabindex="-1" hidden></p>
+        <p id="design-lab-warning" class="design-lab-warning" role="status" hidden></p>
+        <label for="design-lab-preview"><span>Preview rancangan</span><textarea id="design-lab-preview" rows="17" readonly></textarea></label>
+        <div class="dialog-actions"><button id="generate-design-plan" class="secondary-button" type="submit">Buat rancangan</button><button id="copy-design-plan" class="secondary-button" type="button" disabled>Salin hasil</button><button id="download-design-plan" class="primary-button" type="button" disabled>Unduh hasil</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="flaky-dialog" class="export-dialog flaky-dialog" aria-labelledby="flaky-title"><div class="export-dialog-heading"><div><p class="step-label">Triage evidence</p><h2 id="flaky-title">Flaky-test management</h2><p>Pola dihitung dari status, retry, build, dan environment. Klasifikasi tetap berupa bantuan triage, bukan diagnosis final.</p></div><button id="flaky-close" class="icon-button" type="button" aria-label="Tutup analisis flaky">×</button></div><div id="flaky-summary" class="flaky-summary" role="status"></div><div class="table-frame flaky-table-frame" tabindex="0" aria-label="Analisis flaky test, dapat digulir horizontal"><table><thead><tr><th scope="col">Test case</th><th scope="col">Klasifikasi</th><th scope="col">Retry</th><th scope="col">Environment</th><th scope="col">Evidence</th></tr></thead><tbody id="flaky-body"></tbody></table></div><p class="review-note">Gunakan referensi defect dan bukti retry untuk triage bersama engineer. Casecraft tidak menutup defect secara otomatis.</p></dialog>
+
+    <dialog id="diff-dialog" class="export-dialog report-dialog" aria-labelledby="diff-title"><div class="export-dialog-heading"><div><p class="step-label">Patch lokal</p><h2 id="diff-title">Change analysis dari Git diff</h2><p>Saran hanya dibuat ketika path, tag, modul, atau istilah test case cocok dengan patch.</p></div><button id="diff-close" class="icon-button" type="button" aria-label="Tutup analisis Git diff">×</button></div><div id="diff-preview" class="diff-preview" role="status"></div></dialog>
+
+    <dialog id="dependency-dialog" class="export-dialog dependency-dialog" aria-labelledby="dependency-title"><div class="export-dialog-heading"><div><p class="step-label">Evidence graph</p><h2 id="dependency-title">Peta dependensi test</h2><p>Relasi requirement, test case, data, run, defect, dan draft automation dari workspace lokal.</p></div><button id="dependency-close" class="icon-button" type="button" aria-label="Tutup peta dependensi">×</button></div><div id="dependency-summary" class="dependency-summary"></div><div id="dependency-graph" class="dependency-graph" role="list"></div></dialog>
+
+    <dialog id="export-dialog" class="export-dialog" aria-labelledby="export-title">
+      <form id="export-form" novalidate><div class="export-dialog-heading"><div><p class="step-label">Ekspor lokal</p><h2 id="export-title">Atur format ekspor</h2><p>Pilih template, kolom, delimiter, dan mapping status. Tidak ada data yang dikirim ke jaringan.</p></div><button id="export-close" class="icon-button" type="button" aria-label="Tutup pengaturan ekspor">×</button></div>
+        <div class="export-config-grid"><section><label for="export-template"><span>Adapter / template</span><select id="export-template"></select></label><label for="export-output-language"><span>Bahasa output</span><select id="export-output-language"><option value="id">Bahasa Indonesia</option><option value="en">English</option></select></label><label for="export-delimiter"><span>Delimiter</span><select id="export-delimiter"><option value=",">Koma (,)</option><option value=";">Titik koma (;)</option><option value="|">Pipa (|)</option><option value="tab">Tab</option></select></label><fieldset><legend>Mapping status QA</legend><div class="status-mapping"><label for="map-untested"><span>Belum diuji</span><input id="map-untested" type="text" value="Belum diuji" /></label><label for="map-passed"><span>Lulus</span><input id="map-passed" type="text" value="Lulus" /></label><label for="map-failed"><span>Gagal</span><input id="map-failed" type="text" value="Gagal" /></label><label for="map-blocked"><span>Terblokir</span><input id="map-blocked" type="text" value="Terblokir" /></label></div></fieldset></section><fieldset class="export-columns"><legend>Kolom</legend><div id="export-column-options"></div><small id="export-error" class="field-error" role="alert" hidden></small></fieldset></div>
+        <section class="quality-gate" aria-labelledby="quality-gate-title"><div class="quality-gate-heading"><div><p class="step-label">Quality gate</p><h3 id="quality-gate-title">Pemeriksaan sebelum ekspor</h3></div><strong id="quality-gate-summary"></strong></div><ul id="quality-gate-list"></ul><label class="quality-override"><input id="quality-override" type="checkbox" /><span>Ekspor sebagai draft meski masih ada error</span></label></section><label for="export-preview"><span>Preview</span><textarea id="export-preview" rows="9" readonly></textarea></label><div class="dialog-actions"><button id="copy-export" class="secondary-button" type="button">Salin hasil</button><button id="download-export" class="primary-button" type="button">Unduh file</button></div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden><span id="toast-message"></span><button id="toast-action" type="button" hidden></button></div>
+    <script type="module" src="./management.js?v=19"></script>
+  </body>
+</html>

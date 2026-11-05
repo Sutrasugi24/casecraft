@@ -3,8 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "casecraft": "./bin/casecraft.mjs"
+  },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check dist/app.js && node --check dist/generator.js"
+    "test:e2e:install": "playwright install chromium",
+    "test:e2e": "playwright test",
+    "check": "node --check dist/app.js && node --check dist/management.js && node --check dist/collection-store.js && node --check dist/persistent-store.js && node --check dist/generator.js && node --check dist/export-config.js && node --check dist/analysis-tools.js && node --check dist/structured-import.js && node --check dist/run-comparison.js && node --check dist/qa-report.js && node --check dist/adapter-registry.js && node --check dist/collaboration-provider.js && node --check dist/automation-tools.js && node --check dist/automation-results.js && node --check dist/pairwise.js && node --check dist/change-analysis.js && node --check dist/dependency-graph.js && node --check dist/test-data-studio.js && node --check dist/flaky-analysis.js && node --check dist/advanced-test-design.js && node --check dist/ci-quality-gate.js && node --check dist/plugin-sdk.js && node --check dist/localization.js && node --check dist/pwa.js && node --check dist/sw.js && node --check bin/casecraft.mjs",
+    "quality:ci": "node ./bin/casecraft.mjs validate --ci"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
   }
 }

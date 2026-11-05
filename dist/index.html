@@ -3,56 +3,62 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Ubah requirement menjadi test case QA yang siap diekspor ke Notion atau Jira." />
+    <meta name="description" content="Susun koleksi test case deterministik dari requirement fitur." />
     <meta name="theme-color" content="#f2f5f8" />
-    <title>Casecraft — QA Test Case Generator</title>
-    <link rel="stylesheet" href="./styles.css?v=2" />
+    <title>Generator Test Case — Casecraft</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./casecraft-icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css?v=17" />
   </head>
   <body>
     <a class="skip-link" href="#workspace">Lewati ke area kerja</a>
     <header class="app-header">
-      <a class="brand" href="#workspace" aria-label="Casecraft, kembali ke area kerja">
-        <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" role="img"><path d="M7 16.5 12.5 22 25 9.5"/><path d="M5 5h22v22H5z"/></svg>
-        </span>
+      <a class="brand" href="./index.html" aria-label="Casecraft, buka generator">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 16.5 12.5 22 25 9.5"/><path d="M5 5h22v22H5z"/></svg></span>
         <span>Casecraft</span>
       </a>
-      <div class="header-meta">
-        <span class="privacy-dot" aria-hidden="true"></span>
-        Diproses di browser
-      </div>
+      <nav class="page-nav" aria-label="Navigasi utama">
+        <a class="page-nav-link is-current" href="./index.html" aria-current="page"><span>1</span> Generator</a>
+        <a class="page-nav-link" href="./management.html"><span>2</span> Manajemen</a>
+      </nav>
+      <div class="header-tools"><label for="interface-language" class="header-language"><span>Bahasa antarmuka</span><select id="interface-language"><option value="id">ID</option><option value="en">EN</option></select></label><button id="install-app" class="text-button" type="button" hidden>Instal aplikasi</button><div id="connection-status" class="header-meta"><span class="privacy-dot" aria-hidden="true"></span>Lokal · siap offline</div></div>
     </header>
 
-    <main id="workspace" class="workspace">
-      <section class="intro" aria-labelledby="page-title">
-        <p class="eyebrow">QA workbench · Bahasa Indonesia</p>
-        <h1 id="page-title">Requirement masuk.<br />Coverage terlihat.</h1>
-        <p class="intro-copy">Buat draft test case yang terstruktur, lalu tinjau cakupannya sebelum dipindahkan ke Notion atau Jira.</p>
+    <main id="workspace" class="workspace generator-workspace">
+      <section class="intro intro-compact" aria-labelledby="page-title">
+        <div><p class="eyebrow">Langkah 1 · Requirement intake</p><h1 id="page-title">Susun fondasi pengujian.</h1></div>
+        <p class="intro-copy">Masukkan konteks fitur dan pilih sudut coverage. Casecraft akan membuat draft deterministik untuk ditinjau di halaman manajemen.</p>
       </section>
 
-      <section class="workbench" aria-label="Generator test case">
-        <form id="generator-form" class="panel input-panel" novalidate>
-          <div class="panel-heading">
-            <div>
-              <p class="step-label">Input</p>
-              <h2>Jelaskan fitur yang diuji</h2>
-            </div>
-            <button class="text-button" id="fill-example" type="button">Gunakan contoh</button>
+      <section class="generator-layout" aria-label="Generator test case">
+        <form id="generator-form" class="panel input-panel generator-panel" novalidate>
+          <div class="panel-heading"><div><p class="step-label">Brief pengujian</p><h2>Jelaskan fitur yang diuji</h2></div><button class="text-button" id="fill-example" type="button">Gunakan contoh</button></div>
+
+          <div id="existing-collection" class="inline-notice inline-notice-caution" hidden>
+            <strong>Koleksi aktif terdeteksi</strong><span id="existing-collection-text"></span><a href="./management.html">Tinjau koleksi aktif</a>
           </div>
 
           <div class="field-group">
-            <label for="feature-name">Nama fitur</label>
-            <input id="feature-name" name="featureName" type="text" maxlength="80" placeholder="Contoh: Tabungan Driver" autocomplete="off" aria-describedby="feature-help" />
-            <p id="feature-help" class="field-help">Dipakai untuk judul modul dan ID test case.</p>
+            <label for="feature-name">Nama fitur <span aria-hidden="true">*</span></label>
+            <input id="feature-name" name="featureName" type="text" maxlength="80" placeholder="Contoh: Tabungan Driver" autocomplete="off" aria-describedby="feature-help feature-error" required />
+            <p id="feature-help" class="field-help">Setiap nama fitur memiliki suite test case sendiri.</p>
+            <p id="feature-error" class="field-error" role="alert" hidden></p>
+          </div>
+
+          <div class="generator-tools">
+            <label for="test-profile"><span>Profil test reusable</span><select id="test-profile"><option value="none">Tanpa profil</option><option value="authentication">Autentikasi</option><option value="crud">CRUD</option><option value="payment">Pembayaran</option><option value="search">Pencarian</option><option value="upload">Upload</option><option value="permission">Permission</option><option value="bulk">Bulk operation</option></select><small id="profile-help">Profil menambah draft eksplisit yang tetap perlu disesuaikan QA.</small></label>
+            <div class="structured-import-control"><span>Spesifikasi terstruktur</span><button id="import-specification" class="secondary-button" type="button">Impor file lokal</button><small>Gherkin, OpenAPI, JSON Schema, CSV, atau Markdown · maks. 5 MB</small><input id="specification-file" type="file" accept=".feature,.json,.yaml,.yml,.csv,.md,.markdown,application/json,text/csv,text/markdown" hidden /><p id="specification-feedback" class="import-summary" role="status" hidden></p></div>
+          </div>
+
+          <div class="language-grid" aria-label="Pengaturan bahasa test case">
+            <label for="requirement-language"><span>Bahasa requirement</span><select id="requirement-language"><option value="auto">Deteksi otomatis</option><option value="id">Bahasa Indonesia</option><option value="en">English</option></select></label>
+            <label for="output-language"><span>Bahasa output</span><select id="output-language"><option value="id">Bahasa Indonesia</option><option value="en">English</option></select></label>
           </div>
 
           <div class="field-group requirement-field">
-            <div class="label-row">
-              <label for="requirement">Requirement <span aria-hidden="true">*</span></label>
-              <span id="character-count" class="character-count">0 karakter</span>
-            </div>
-            <textarea id="requirement" name="requirement" rows="13" minlength="30" placeholder="Tempel deskripsi fitur, acceptance criteria, aturan validasi, dan perilaku yang sudah ada..." aria-describedby="requirement-help requirement-error" required></textarea>
-            <p id="requirement-help" class="field-help">Tip: satu acceptance criteria per baris menghasilkan analisis yang lebih presisi.</p>
+            <div class="label-row"><label for="requirement">Requirement <span aria-hidden="true">*</span></label><span id="character-count" class="character-count">0 karakter</span></div>
+            <textarea id="requirement" name="requirement" rows="13" minlength="30" placeholder="Tempel deskripsi fitur, acceptance criteria, aturan validasi, dan perilaku existing..." aria-describedby="requirement-help requirement-error" required></textarea>
+            <p id="requirement-help" class="field-help">Satu acceptance criteria per baris membuat skenario lebih mudah ditelusuri.</p>
             <p id="requirement-error" class="field-error" role="alert" hidden></p>
           </div>
 
@@ -62,89 +68,30 @@
               <label class="check-option"><input type="checkbox" name="coverage" value="happy" checked /><span><strong>Happy path</strong><small>Alur utama</small></span></label>
               <label class="check-option"><input type="checkbox" name="coverage" value="negative" checked /><span><strong>Negative</strong><small>Input & kegagalan</small></span></label>
               <label class="check-option"><input type="checkbox" name="coverage" value="edge" checked /><span><strong>Edge case</strong><small>Batas & kondisi khusus</small></span></label>
-              <label class="check-option"><input type="checkbox" name="coverage" value="regression" checked /><span><strong>Regression</strong><small>Fitur existing</small></span></label>
+              <label class="check-option"><input type="checkbox" name="coverage" value="regression" checked /><span><strong>Regression</strong><small>Perilaku existing</small></span></label>
             </div>
             <p id="coverage-error" class="field-error" role="alert" hidden></p>
           </fieldset>
 
-          <button id="generate-button" class="primary-button" type="submit">
-            <span class="button-label">Buat test case</span>
-            <span class="button-spinner" aria-hidden="true"></span>
-            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
-          </button>
-          <p class="form-note"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 4 5v4.5c0 3.7 2.5 6.4 6 8 3.5-1.6 6-4.3 6-8V5l-6-2.5Z"/><path d="m7.3 10 1.7 1.7 3.8-4"/></svg>Requirement tidak dikirim ke server pada versi ini.</p>
+          <p id="storage-error" class="form-alert" role="alert" tabindex="-1" hidden></p>
+          <button id="generate-button" class="primary-button" type="submit"><span class="button-label">Buat dan tinjau fitur</span><span class="button-spinner" aria-hidden="true"></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"/></svg></button>
+          <p class="form-note"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 4 5v4.5c0 3.7 2.5 6.4 6 8 3.5-1.6 6-4.3 6-8V5l-6-2.5Z"/><path d="m7.3 10 1.7 1.7 3.8-4"/></svg>Requirement diproses lokal. Penyimpanan lintas sesi hanya aktif jika Anda memilih IndexedDB di halaman Manajemen.</p>
         </form>
 
-        <section class="panel output-panel" aria-labelledby="output-title">
-          <div class="output-toolbar">
-            <div>
-              <p class="step-label">Output</p>
-              <h2 id="output-title">Test case hasil analisis</h2>
-            </div>
-            <div id="export-actions" class="export-actions" hidden>
-              <button id="copy-notion" class="secondary-button" type="button">
-                <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="10" height="10" rx="2"/><path d="M14 6V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
-                Salin untuk Notion
-              </button>
-              <button id="download-jira" class="secondary-button" type="button">
-                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v11m0 0 4-4m-4 4L6 9"/><path d="M3 15v3h14v-3"/></svg>
-                Unduh CSV Jira
-              </button>
-            </div>
-          </div>
-
-          <div id="empty-state" class="empty-state">
-            <div class="empty-sheet" aria-hidden="true">
-              <span></span><span></span><span></span><span></span>
-              <svg viewBox="0 0 48 48"><path d="m13 25 7 7 15-17"/></svg>
-            </div>
-            <h3>Belum ada test case</h3>
-            <p>Masukkan requirement di sebelah kiri. Hasil akan tampil bersama peta cakupannya.</p>
-          </div>
-
-          <div id="results" class="results" hidden>
-            <aside class="coverage-rail" aria-label="Ringkasan cakupan test case">
-              <p class="rail-title">Coverage map</p>
-              <div id="coverage-summary" class="coverage-summary"></div>
-              <p id="coverage-note" class="coverage-note"></p>
-            </aside>
-
-            <div class="results-main">
-              <div class="results-meta">
-                <p><strong id="case-count">0</strong> test case dibuat</p>
-                <div class="filter-group" aria-label="Filter kategori">
-                  <button class="filter-chip is-active" type="button" data-filter="all" aria-pressed="true">Semua</button>
-                  <button class="filter-chip" type="button" data-filter="happy" aria-pressed="false">Happy</button>
-                  <button class="filter-chip" type="button" data-filter="negative" aria-pressed="false">Negative</button>
-                  <button class="filter-chip" type="button" data-filter="edge" aria-pressed="false">Edge</button>
-                  <button class="filter-chip" type="button" data-filter="regression" aria-pressed="false">Regression</button>
-                </div>
-              </div>
-
-              <div class="table-frame" tabindex="0" aria-label="Tabel test case, dapat digulir horizontal">
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Test Case ID</th>
-                      <th scope="col">Module / Fitur</th>
-                      <th scope="col">Test Scenario</th>
-                      <th scope="col">Test Steps</th>
-                      <th scope="col">Expected Result</th>
-                      <th scope="col">Actual Result</th>
-                      <th scope="col">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="test-case-body"></tbody>
-                </table>
-              </div>
-              <p class="review-note">Draft otomatis tetap perlu ditinjau oleh QA sebelum dieksekusi.</p>
-            </div>
-          </div>
-        </section>
+        <aside class="panel qa-brief" aria-labelledby="qa-brief-title">
+          <p class="step-label">Checklist brief</p><h2 id="qa-brief-title">Berikan bahan yang bisa diuji</h2><p>Generator paling berguna ketika requirement menjelaskan perilaku, bukan hanya nama fitur.</p>
+          <ol class="brief-checklist">
+            <li><span>01</span><div><strong>Alur dan aktor</strong><small>Siapa melakukan apa, dari kondisi awal yang mana.</small></div></li>
+            <li><span>02</span><div><strong>Aturan validasi</strong><small>Input wajib, format, batas nilai, dan pesan kegagalan.</small></div></li>
+            <li><span>03</span><div><strong>Dampak data</strong><small>Apa yang berubah, tersimpan, dihitung, atau tetap sama.</small></div></li>
+            <li><span>04</span><div><strong>Perilaku existing</strong><small>Alur yang perlu dilindungi oleh regression test.</small></div></li>
+          </ol>
+          <div class="brief-output"><strong>Berikutnya</strong><p>Tinjau coverage, tambahkan requirement serupa, dan catat hasil eksekusi di halaman Manajemen.</p></div>
+        </aside>
       </section>
     </main>
 
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-    <script type="module" src="./app.js?v=2"></script>
+    <script type="module" src="./app.js?v=10"></script>
   </body>
 </html>

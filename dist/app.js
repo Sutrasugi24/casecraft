@@ -1,4 +1,9 @@
-import { CATEGORY_LABELS, generateTestCases, toJiraCsv, toMarkdown } from "./generator.js";
+import { createCollection, featureIdFromName, nextRequirementId, upsertFeature } from "./collection-store.js";
+import { buildGenerationReport, generateTestCases, mergeTestCases } from "./generator.js";
+import { loadBestCollection, saveActiveCollection } from "./persistent-store.js";
+import { importWithAdapter } from "./adapter-registry.js";
+import { initLocalization } from "./localization.js";
+import { initPwa } from "./pwa.js";
 
 const EXAMPLE_FEATURE = "Tabungan Driver";
 const EXAMPLE_REQUIREMENT = `Deskripsi:
@@ -14,27 +19,27 @@ Kriteria Penerimaan:
 
 const form = document.querySelector("#generator-form");
 const featureInput = document.querySelector("#feature-name");
+const featureError = document.querySelector("#feature-error");
 const requirementInput = document.querySelector("#requirement");
 const requirementError = document.querySelector("#requirement-error");
 const coverageError = document.querySelector("#coverage-error");
 const characterCount = document.querySelector("#character-count");
 const generateButton = document.querySelector("#generate-button");
 const buttonLabel = generateButton.querySelector(".button-label");
-const emptyState = document.querySelector("#empty-state");
-const results = document.querySelector("#results");
-const exportActions = document.querySelector("#export-actions");
-const tableBody = document.querySelector("#test-case-body");
-const caseCount = document.querySelector("#case-count");
-const coverageSummary = document.querySelector("#coverage-summary");
-const coverageNote = document.querySelector("#coverage-note");
-const copyNotion = document.querySelector("#copy-notion");
-const downloadJira = document.querySelector("#download-jira");
+const existingCollection = document.querySelector("#existing-collection");
+const existingCollectionText = document.querySelector("#existing-collection-text");
+const storageError = document.querySelector("#storage-error");
 const toast = document.querySelector("#toast");
-const filterButtons = [...document.querySelectorAll(".filter-chip")];
+const profileSelect = document.querySelector("#test-profile");
+const importSpecificationButton = document.querySelector("#import-specification");
+const specificationFile = document.querySelector("#specification-file");
+const specificationFeedback = document.querySelector("#specification-feedback");
+const requirementLanguage = document.querySelector("#requirement-language");
+const outputLanguage = document.querySelector("#output-language");
 
-let generatedCases = [];
-let activeFilter = "all";
 let toastTimer;
+let collection = await loadBestCollection();
+let structuredImport = null;
 
 function selectedCoverage() {
   return [...form.querySelectorAll('input[name="coverage"]:checked')].map((input) => input.value);
@@ -50,94 +55,58 @@ function clearRequirementError() {
   requirementError.textContent = "";
 }
 
+function clearFeatureError() {
+  featureInput.removeAttribute("aria-invalid");
+  featureError.hidden = true;
+  featureError.textContent = "";
+}
+
 function validateForm() {
-  let valid = true;
   const value = requirementInput.value.trim();
 
+  clearFeatureError();
   clearRequirementError();
   coverageError.hidden = true;
   coverageError.textContent = "";
+
+  if (!featureInput.value.trim()) {
+    featureInput.setAttribute("aria-invalid", "true");
+    featureError.textContent = "Nama fitur wajib diisi agar test case tidak bercampur dengan suite lain.";
+    featureError.hidden = false;
+    featureInput.focus();
+    return false;
+  }
 
   if (!value) {
     requirementInput.setAttribute("aria-invalid", "true");
     requirementError.textContent = "Requirement wajib diisi agar test case dapat dibuat.";
     requirementError.hidden = false;
     requirementInput.focus();
-    valid = false;
-  } else if (value.length < 30) {
+    return false;
+  }
+
+  if (value.length < 30) {
     requirementInput.setAttribute("aria-invalid", "true");
     requirementError.textContent = "Tambahkan detail requirement hingga sedikitnya 30 karakter.";
     requirementError.hidden = false;
     requirementInput.focus();
-    valid = false;
-  } else if (!selectedCoverage().length) {
+    return false;
+  }
+
+  if (!selectedCoverage().length) {
     coverageError.textContent = "Pilih sedikitnya satu jenis cakupan pengujian.";
     coverageError.hidden = false;
     form.querySelector('input[name="coverage"]').focus();
-    valid = false;
+    return false;
   }
 
-  return valid;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function renderTable() {
-  const visibleCases = activeFilter === "all"
-    ? generatedCases
-    : generatedCases.filter((testCase) => testCase.category === activeFilter);
-
-  if (!visibleCases.length) {
-    tableBody.innerHTML = `<tr class="no-filter-results"><td colspan="7">Tidak ada test case untuk kategori ini.</td></tr>`;
-    return;
-  }
-
-  tableBody.innerHTML = visibleCases.map((testCase) => `
-    <tr data-category="${testCase.category}">
-      <td>
-        <span class="case-id">${escapeHtml(testCase.id)}</span>
-        <span class="category-badge" data-category="${testCase.category}">${escapeHtml(testCase.categoryLabel)}</span>
-      </td>
-      <td>${escapeHtml(testCase.module)}</td>
-      <td><span class="scenario-title">${escapeHtml(testCase.scenario)}</span></td>
-      <td><ol class="steps-list">${testCase.steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol></td>
-      <td><span class="expected-result">${escapeHtml(testCase.expected)}</span></td>
-      <td><span class="empty-cell">Kosong</span></td>
-      <td><span class="status-placeholder">Belum diuji</span></td>
-    </tr>
-  `).join("");
-}
-
-function renderCoverage() {
-  const counts = Object.keys(CATEGORY_LABELS).reduce((summary, category) => {
-    summary[category] = generatedCases.filter((testCase) => testCase.category === category).length;
-    return summary;
-  }, {});
-
-  coverageSummary.innerHTML = Object.entries(CATEGORY_LABELS).map(([category, label]) => `
-    <div class="coverage-item" data-category="${category}">
-      <span class="coverage-marker" aria-hidden="true"></span>
-      <span><strong>${counts[category]}</strong><small>${escapeHtml(label)}</small></span>
-    </div>
-  `).join("");
-
-  const missing = Object.entries(counts).filter(([, count]) => count === 0).map(([category]) => CATEGORY_LABELS[category]);
-  coverageNote.textContent = missing.length
-    ? `Belum dicakup: ${missing.join(", ")}. Aktifkan kategori tersebut lalu buat ulang.`
-    : "Empat sudut coverage sudah terwakili. Tinjau detail bisnis sebelum eksekusi.";
+  return true;
 }
 
 function setBusy(isBusy) {
   generateButton.disabled = isBusy;
   generateButton.setAttribute("aria-busy", String(isBusy));
-  buttonLabel.textContent = isBusy ? "Menganalisis requirement" : "Buat test case";
+  buttonLabel.textContent = isBusy ? "Menyusun suite fitur" : "Buat dan tinjau fitur";
 }
 
 function showToast(message) {
@@ -149,67 +118,69 @@ function showToast(message) {
   }, 3200);
 }
 
-async function copyText(text) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
+function showExistingCollection() {
+  if (!collection?.features.length) return;
 
-  const temporary = document.createElement("textarea");
-  temporary.value = text;
-  temporary.setAttribute("readonly", "");
-  temporary.style.position = "fixed";
-  temporary.style.opacity = "0";
-  document.body.appendChild(temporary);
-  temporary.select();
-  document.execCommand("copy");
-  temporary.remove();
-}
-
-function safeFilename(value) {
-  return (value || "test-cases")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "") || "test-cases";
+  const totalCases = collection.features.reduce((total, feature) => total + feature.cases.length, 0);
+  existingCollectionText.textContent = `${collection.features.length.toLocaleString("id-ID")} fitur dan ${totalCases.toLocaleString("id-ID")} test case tersimpan. Nama fitur yang sama akan diperbarui tanpa mencampur suite lain.`;
+  existingCollection.hidden = false;
 }
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  storageError.hidden = true;
   if (!validateForm()) return;
 
   setBusy(true);
-
   await new Promise((resolve) => window.setTimeout(resolve, 420));
 
-  generatedCases = generateTestCases({
+  const existingFeature = collection?.features.find((feature) => feature.id === featureIdFromName(featureInput.value));
+  const requirementId = existingFeature ? nextRequirementId(existingFeature) : "REQ-001";
+  const coverage = selectedCoverage();
+  const generatedCases = generateTestCases({
     featureName: featureInput.value,
     requirement: requirementInput.value,
-    coverage: selectedCoverage(),
+    coverage,
+    requirementId,
+    profile: profileSelect.value,
+    outputLanguage: outputLanguage.value,
   });
+  const cases = structuredImport?.cases?.length ? mergeTestCases(generatedCases, structuredImport.cases.map((testCase) => ({ ...testCase, module: featureInput.value.trim() }))).cases : generatedCases;
+  const generationReport = buildGenerationReport({ requirement: requirementInput.value, coverage, requirementId, cases });
+  if (profileSelect.value !== "none") generationReport.warnings.push("Draft dari profil reusable harus ditinjau dan disesuaikan QA sebelum quality gate dapat lulus.");
+  if (structuredImport?.warnings?.length) generationReport.warnings.push(...structuredImport.warnings);
+  const details = {
+    featureName: featureInput.value.trim(),
+    requirement: requirementInput.value.trim(),
+    generationReport,
+    createdAt: new Date().toISOString(),
+    requirementLanguage: requirementLanguage.value,
+    outputLanguage: outputLanguage.value,
+  };
+  const result = collection ? upsertFeature(collection, cases, details) : { collection: createCollection(cases, details) };
 
-  activeFilter = "all";
-  filterButtons.forEach((button) => {
-    const active = button.dataset.filter === "all";
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
+  const saveResult = saveActiveCollection(result.collection);
+  if (!saveResult.sessionSaved) {
+    storageError.textContent = "Koleksi tidak dapat disimpan di sesi browser ini. Jalankan Casecraft melalui server lokal lalu coba lagi.";
+    storageError.hidden = false;
+    setBusy(false);
+    storageError.focus();
+    return;
+  }
 
-  caseCount.textContent = generatedCases.length.toLocaleString("id-ID");
-  renderCoverage();
-  renderTable();
-  emptyState.hidden = true;
-  results.hidden = false;
-  exportActions.hidden = false;
-  setBusy(false);
+  collection = result.collection;
+  saveResult.permanentSave.catch(() => {});
 
-  results.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-  showToast(`${generatedCases.length} test case berhasil dibuat.`);
+  window.location.href = "./management.html";
 });
 
 requirementInput.addEventListener("input", () => {
   updateCharacterCount();
   if (requirementInput.getAttribute("aria-invalid") === "true") clearRequirementError();
+});
+
+featureInput.addEventListener("input", () => {
+  if (featureInput.getAttribute("aria-invalid") === "true") clearFeatureError();
 });
 
 form.querySelectorAll('input[name="coverage"]').forEach((input) => {
@@ -223,43 +194,40 @@ document.querySelector("#fill-example").addEventListener("click", () => {
   featureInput.value = EXAMPLE_FEATURE;
   requirementInput.value = EXAMPLE_REQUIREMENT;
   updateCharacterCount();
+  clearFeatureError();
   clearRequirementError();
   requirementInput.focus();
   showToast("Contoh Tabungan Driver dimasukkan.");
 });
 
-filterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    activeFilter = button.dataset.filter;
-    filterButtons.forEach((item) => {
-      const active = item === button;
-      item.classList.toggle("is-active", active);
-      item.setAttribute("aria-pressed", String(active));
-    });
-    renderTable();
-  });
-});
-
-copyNotion.addEventListener("click", async () => {
-  try {
-    await copyText(toMarkdown(generatedCases));
-    showToast("Tabel Markdown disalin. Tempel langsung ke Notion.");
-  } catch {
-    showToast("Tabel belum dapat disalin. Coba lagi atau gunakan unduhan CSV.");
+importSpecificationButton.addEventListener("click", () => specificationFile.click());
+specificationFile.addEventListener("change", async () => {
+  const [file] = specificationFile.files || [];
+  specificationFile.value = "";
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    specificationFeedback.textContent = "File melebihi batas 5 MB.";
+    specificationFeedback.dataset.tone = "error";
+    specificationFeedback.hidden = false;
+    return;
   }
-});
-
-downloadJira.addEventListener("click", () => {
-  const blob = new Blob([toJiraCsv(generatedCases)], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${safeFilename(featureInput.value)}-jira.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-  showToast("CSV Jira berhasil diunduh.");
+  const parsed = importWithAdapter({ name: file.name, type: file.type, text: await file.text() });
+  structuredImport = parsed.ok ? parsed : null;
+  specificationFeedback.hidden = false;
+  specificationFeedback.dataset.tone = parsed.ok ? "success" : "error";
+  specificationFeedback.textContent = parsed.ok
+    ? `${parsed.format}: ${parsed.cases.length} skenario terstruktur dibaca lokal.${parsed.warnings.length ? ` ${parsed.warnings.join(" ")}` : ""}`
+    : parsed.warnings.join(" ");
+  if (!parsed.ok) return;
+  featureInput.value = parsed.featureName || featureInput.value;
+  requirementInput.value = parsed.requirementText || requirementInput.value;
+  updateCharacterCount();
+  clearFeatureError();
+  clearRequirementError();
+  requirementInput.focus();
 });
 
 updateCharacterCount();
+showExistingCollection();
+initLocalization();
+initPwa();

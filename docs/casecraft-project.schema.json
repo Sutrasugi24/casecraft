@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://casecraft.local/schema/casecraft-project-v1.json",
+  "title": "Casecraft portable project",
+  "description": "Open, browser-only Casecraft workspace backup format.",
+  "type": "object",
+  "required": ["format", "formatVersion", "exportedAt", "collection"],
+  "properties": {
+    "format": { "const": "casecraft-project" },
+    "formatVersion": { "const": 1 },
+    "exportedAt": { "type": "string", "format": "date-time" },
+    "collection": { "$ref": "#/$defs/collection" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "collection": {
+      "type": "object",
+      "required": ["version", "activeFeatureId", "features"],
+      "properties": {
+        "version": { "const": 3 },
+        "activeFeatureId": { "type": "string" },
+        "features": { "type": "array", "items": { "$ref": "#/$defs/feature" } }
+      },
+      "additionalProperties": true
+    },
+    "feature": {
+      "type": "object",
+      "required": ["id", "name", "requirements", "cases", "cycles", "activeCycleId"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "requirement": { "type": "string" },
+        "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
+        "cases": { "type": "array", "items": { "$ref": "#/$defs/testCase" } },
+        "cycles": { "type": "array", "items": { "$ref": "#/$defs/cycle" } },
+        "activeCycleId": { "type": "string" },
+        "archived": { "type": "boolean" },
+        "archivedAt": { "type": "string" },
+        "requirementLanguage": { "type": "string" },
+        "outputLanguage": { "enum": ["id", "en"] }
+      },
+      "additionalProperties": true
+    },
+    "requirement": {
+      "type": "object",
+      "required": ["id", "text", "criteria"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^REQ-" },
+        "text": { "type": "string" },
+        "criteria": { "type": "array", "items": { "$ref": "#/$defs/criterion" } },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "currentVersion": { "type": "integer", "minimum": 1 },
+        "versions": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": true
+    },
+    "criterion": {
+      "type": "object",
+      "required": ["id", "text"],
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "ambiguous": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "testCase": {
+      "type": "object",
+      "required": ["id", "module", "category", "scenario", "steps", "expected"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^TC_" },
+        "module": { "type": "string" },
+        "category": { "enum": ["happy", "negative", "edge", "regression"] },
+        "categoryLabel": { "type": "string" },
+        "testType": { "type": "string" },
+        "scenario": { "type": "string" },
+        "precondition": { "type": "string" },
+        "steps": { "type": "array", "items": { "type": "string" } },
+        "testData": { "type": "string" },
+        "expected": { "type": "string" },
+        "criterionIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "tags": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "parameterSets": { "type": "array", "items": { "$ref": "#/$defs/parameterSet" } },
+        "priority": { "enum": ["Critical", "High", "Medium", "Low"] },
+        "qaStatus": { "enum": ["Belum diuji", "Lulus", "Gagal", "Terblokir"] },
+        "rejectStatus": { "enum": ["Tidak ditolak", "Ditolak"] },
+        "actual": { "type": "string" },
+        "defectReference": { "type": "string" },
+        "blocker": { "type": "string" },
+        "automation": { "type": "object", "additionalProperties": true },
+        "risk": { "type": "object", "additionalProperties": true },
+        "requirementImpact": { "type": ["object", "null"], "additionalProperties": true }
+      },
+      "additionalProperties": true
+    },
+    "parameterSet": {
+      "type": "object",
+      "required": ["id", "label", "data", "expected"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "data": { "type": "string" },
+        "expected": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "cycle": {
+      "type": "object",
+      "required": ["id", "name", "results", "caseIds"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^CYCLE-" },
+        "name": { "type": "string" },
+        "buildVersion": { "type": "string" },
+        "environment": { "type": "string" },
+        "browser": { "type": "string" },
+        "device": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "caseIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "results": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/result" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "qaStatus": { "enum": ["Belum diuji", "Lulus", "Gagal", "Terblokir"] },
+        "rejectStatus": { "enum": ["Tidak ditolak", "Ditolak"] },
+        "actual": { "type": "string" },
+        "defectReference": { "type": "string" },
+        "blocker": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "automationSource": { "type": "string" },
+        "automationRetries": { "type": "integer", "minimum": 0 },
+        "automationFlaky": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

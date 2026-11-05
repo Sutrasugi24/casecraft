@@ -1,0 +1,15 @@
+{
+  "name": "Casecraft QA Workbench",
+  "short_name": "Casecraft",
+  "description": "Workbench QA deterministik yang bekerja lokal dan offline.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f5f8",
+  "theme_color": "#2457a7",
+  "lang": "id",
+  "icons": [
+    { "src": "./casecraft-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
+
